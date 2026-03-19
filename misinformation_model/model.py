@@ -1,28 +1,24 @@
-import os
-
 import mesa
 from dotenv import load_dotenv
 from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
-from mesa_llm.module_llm import ModuleLLM
 
 from misinformation_model.agents import CitizenAgent
 
 
 class MisinformationModel(mesa.Model):
-    def __init__(self, width=5, height=5, llm_model="gemini/gemini-2.0-flash"):
+    def __init__(self, width=5, height=5, llm_model="ollama/llama3.2:3b"):
         super().__init__()
 
         load_dotenv()
-        os.environ["GEMINI_API_KEY"] = os.environ.get("GEMINI_API_KEY", "")
 
+        self.llm_model = llm_model
         self.rumor = (
             "The town's water supply has been contaminated with dangerous "
             "chemicals from the nearby factory."
         )
 
-        self.grid = OrthogonalMooreGrid((width, height), capacity=1, torus=True)
-        self.llm_module = ModuleLLM(self, llm_model=llm_model)
+        self.grid = OrthogonalMooreGrid((width, height), capacity=1, torus=True, random=self.random)
 
         agent_configs = [
             {
@@ -107,7 +103,7 @@ class MisinformationModel(mesa.Model):
                 initial_stance=config["initial_stance"],
                 initial_belief=config["initial_belief"],
             )
-            self.grid.move_to_empty(agent)
+            agent.move_to(self.grid.select_random_empty_cell())
 
         self.datacollector = DataCollector(
             model_reporters={

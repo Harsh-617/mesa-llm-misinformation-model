@@ -1,5 +1,8 @@
+from mesa.discrete_space.cell_agent import BasicMovement, HasCell
 from mesa_llm.llm_agent import LLMAgent
-from misinformation_model.tools import (
+from mesa_llm.reasoning.react import ReActReasoning
+
+from misinformation_model.tools import (  # noqa: F401 — import so @tool registers them
     check_neighbors,
     challenge_rumor,
     spread_rumor,
@@ -7,18 +10,19 @@ from misinformation_model.tools import (
 )
 
 
-class CitizenAgent(LLMAgent):
+class CitizenAgent(LLMAgent, HasCell, BasicMovement):
     def __init__(self, model, name, persona, initial_stance, initial_belief):
-        super().__init__(model)
+        super().__init__(
+            model=model,
+            reasoning=ReActReasoning,
+            llm_model=model.llm_model,
+            system_prompt=(
+                f"You are {name}, a citizen in a small community. {persona}"
+            ),
+        )
         self.name = name
-        self.persona = persona
         self.stance = initial_stance
         self.belief_score = initial_belief
-        self.system_prompt = (
-            f"You are {self.name}, a citizen in a small community. "
-            f"{self.persona}"
-        )
-        self.tools = [check_neighbors, spread_rumor, challenge_rumor, update_belief]
 
     def step(self):
         prompt = (
@@ -31,4 +35,5 @@ class CitizenAgent(LLMAgent):
             f"Finally, reflect on the situation and use update_belief to adjust "
             f"your belief score."
         )
-        self.execute(prompt=prompt)
+        plan = self.reasoning.plan(prompt=prompt)
+        self.apply_plan(plan)
