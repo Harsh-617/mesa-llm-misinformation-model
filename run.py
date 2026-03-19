@@ -21,7 +21,7 @@ def main():
         print(f"\n  Summary: {believers} believers, {skeptics} skeptics, {neutrals} neutrals")
 
     # Plot model-level results
-    model_data = model.datacollector.get_model_dataframe()
+    model_data = model.datacollector.get_model_vars_dataframe()
 
     plt.figure(figsize=(10, 6))
     plt.plot(model_data["believers"], color="red", label="Believers", marker="o")
@@ -37,7 +37,7 @@ def main():
     plt.show()
 
     # Print final agent belief scores
-    agent_data = model.datacollector.get_agent_dataframe()
+    agent_data = model.datacollector.get_agent_vars_dataframe()
     print("\n--- Final Belief Scores ---")
     last_step = agent_data.xs(num_steps - 1, level="Step")
     for agent_id, row in last_step.iterrows():
