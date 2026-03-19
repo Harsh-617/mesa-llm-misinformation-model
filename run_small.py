@@ -52,6 +52,9 @@ class SmallMisinformationModel(MisinformationModel):
             },
         ]
 
+        num_agents = kwargs.get("num_agents", len(agent_configs))
+        agent_configs = agent_configs[:num_agents]
+
         for config in agent_configs:
             agent = CitizenAgent(
                 model=self,

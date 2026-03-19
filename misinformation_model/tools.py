@@ -72,6 +72,11 @@ def update_belief(agent, new_score: float):
     Args:
         new_score: The new belief score between 0.0 (disbelief) and 1.0 (full belief).
     """
+    try:
+        new_score = float(new_score)
+    except (ValueError, TypeError):
+        return f"Error: new_score must be a number, got {new_score}"
+
     clamped = max(0.0, min(1.0, new_score))
     agent.belief_score = clamped
 

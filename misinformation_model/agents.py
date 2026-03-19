@@ -46,3 +46,26 @@ class CitizenAgent(LLMAgent, HasCell, BasicMovement):
         )
         plan = self.reasoning.plan(prompt=prompt)
         self.apply_plan(plan)
+
+        # Workaround: small LLMs (e.g. Gemma 3 1B) struggle with multi-step
+        # ReAct tool calling — they often skip update_belief or hallucinate
+        # agent IDs. We apply belief updates programmatically based on which
+        # communication tool the LLM actually invoked.
+        # The plan object stores tool calls at plan.llm_plan.tool_calls,
+        # where each entry is a ChatCompletionMessageToolCall with
+        # .function.name for the tool name.
+        tool_calls = getattr(getattr(plan, 'llm_plan', None), 'tool_calls', None)
+        if tool_calls:
+            called_tools = {tc.function.name for tc in tool_calls}
+            if 'spread_rumor' in called_tools:
+                self.belief_score = min(1.0, self.belief_score + 0.05)
+            elif 'challenge_rumor' in called_tools:
+                self.belief_score = max(0.0, self.belief_score - 0.05)
+
+            # Update stance based on new score
+            if self.belief_score > 0.7:
+                self.stance = "believer"
+            elif self.belief_score < 0.3:
+                self.stance = "skeptic"
+            else:
+                self.stance = "neutral"
